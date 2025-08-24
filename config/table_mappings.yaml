@@ -1,0 +1,23 @@
+tables:
+  species:
+    label: Species
+    id: SpecCode
+    properties: [Genus, Species, FBname, Length, EnvTemp, Importance]
+    relationships:
+      - target: Family
+        source_key: FamCode
+        target_key: FamCode
+        type: PART_OF
+
+  families:
+    label: Family
+    id: FamCode
+    properties: [Family]
+
+  predatorprey:
+    relationships:
+      - source_table: predatorprey
+        source_key: PredID
+        target: Species
+        target_key: SpecCode
+        type: EATS
