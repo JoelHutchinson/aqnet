@@ -38,6 +38,6 @@ The pipeline follows a simple **ETL** pattern:
 
 ### Setup
 ```bash
-git clone https://github.com/yourname/aqnet.git
+git clone https://github.com/joelhutchinson/aqnet.git
 cd aqnet
 pip install -r requirements.txt
