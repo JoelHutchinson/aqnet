@@ -2,7 +2,7 @@ tables:
   species:
     label: Species
     id: SpecCode
-    properties: [Genus, Species, FBname, Length, EnvTemp, Importance]
+    properties: [Genus, Species, FBname, Length, Aquarium]
     relationships:
       - target: Family
         source_key: FamCode

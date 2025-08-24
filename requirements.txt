@@ -2,3 +2,5 @@ pandas
 mysql-connector-python
 neo4j
 PyYAML
+pyarrow
+fastparquet

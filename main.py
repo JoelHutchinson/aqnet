@@ -1,5 +1,5 @@
 import yaml
-from extract.fishbase_extract import export_table_to_csv
+from extract.fishbase_extract import export_parquet_to_csv
 from transform.transform_utils import normalize_dataframe
 from load.neo4j_loader import Neo4jLoader
 import pandas as pd
@@ -18,13 +18,22 @@ NEO4J_CONFIG = {
     "password": "password"
 }
 
-with open("configs/table_mappings.yaml") as f:
-    mappings = yaml.safe_load(f)
+with open("config/fishbase.yaml") as f:
+    fishbase = yaml.safe_load(f)
 
 # --- Extract ---
-for table_name in mappings['tables']:
+for table_name, table_info in fishbase['tables'].items():
+    # Extracting table-specific info
     csv_path = f"data/{table_name}.csv"
-    export_table_to_csv(table_name, csv_path, DB_CONFIG)
+    
+    # Get columns for this specific table
+    columns = table_info.get('columns', None)  # Use 'None' as default if no columns are provided
+
+    # Export parquet to CSV with the correct columns for each table
+    export_parquet_to_csv(f"{table_name}.parquet", csv_path, "./input/fishbase", columns)
+
+# --- Transform ---
+# Apply fishbase filters (aquarium-only)
 
 # --- Load ---
 loader = Neo4jLoader(**NEO4J_CONFIG)

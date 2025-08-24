@@ -1,0 +1,11 @@
+tables:
+  species:
+    label: Species
+    id: SpecCode
+    columns:
+      [Genus, Species, FamCode, FBname, Length, Aquarium, Fresh, Saltwater]
+
+  families:
+    label: Family
+    id: FamCode
+    columns: [Family]
