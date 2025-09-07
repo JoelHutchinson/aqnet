@@ -1,50 +1,53 @@
+import os
+from dotenv import load_dotenv
 import yaml
 from extract.fishbase_extract import export_parquet_to_csv
 from transform.transform_utils import normalize_dataframe
 from load.neo4j_loader import Neo4jLoader
 import pandas as pd
 
-# --- Config ---
-DB_CONFIG = {
-    "host": "localhost",
-    "user": "root",
-    "password": "password",
-    "database": "fishbase"
-}
+# --- Load .env ---
+load_dotenv()  # this loads the environment variables from .env
 
 NEO4J_CONFIG = {
-    "uri": "bolt://localhost:7687",
-    "user": "neo4j",
-    "password": "password"
+    "uri": os.getenv("NEO4J_URI"),
+    "user": os.getenv("NEO4J_USER"),
+    "password": os.getenv("NEO4J_PASSWORD")
 }
 
+# --- Load FishBase config ---
 with open("config/fishbase.yaml") as f:
     fishbase = yaml.safe_load(f)
 
-# --- Extract ---
-for table_name, table_info in fishbase['tables'].items():
-    # Extracting table-specific info
-    csv_path = f"data/{table_name}.csv"
-    
-    # Get columns for this specific table
-    columns = table_info.get('columns', None)  # Use 'None' as default if no columns are provided
+# --- Utility: filter aquarium species ---
+def apply_filters(df):
+    allowed_values = ['commercial', 'highly commercial']
+    return df[df['Aquarium'].str.strip().isin(allowed_values)]
 
-    # Export parquet to CSV with the correct columns for each table
+# --- Extract, Transform & Load (same as before) ---
+for table_name, table_info in fishbase['tables'].items():
+    # Extract
+    csv_path = f"data/{table_name}.csv"
+    columns = table_info.get('columns', None)
     export_parquet_to_csv(f"{table_name}.parquet", csv_path, "./input/fishbase", columns)
 
-# --- Transform ---
-# Apply fishbase filters (aquarium-only)
+    # Transform & filter
+    df = pd.read_csv(csv_path)
+    df = normalize_dataframe(df)
+    if 'Aquarium' in df.columns:
+        df = apply_filters(df)
+    df.to_csv(csv_path, index=False)
 
-# --- Load ---
+# Load into Neo4j
 loader = Neo4jLoader(**NEO4J_CONFIG)
-
-for table_name, table_conf in mappings['tables'].items():
+for table_name, table_conf in fishbase['tables'].items():
+    df = pd.read_csv(f"data/{table_name}.csv")
+    
     if 'properties' in table_conf:
-        df = pd.read_csv(f"data/{table_name}.csv")
-        df = normalize_dataframe(df)
         for _, row in df.iterrows():
             props = {k: row[k] for k in table_conf['properties']}
             loader.create_node(table_conf['label'], props)
+    
     if 'relationships' in table_conf:
         for rel in table_conf['relationships']:
             rel_df = pd.read_csv(f"data/{rel.get('source_table', table_name)}.csv")

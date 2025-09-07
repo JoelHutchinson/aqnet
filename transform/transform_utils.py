@@ -10,4 +10,9 @@ def normalize_dataframe(df):
     return df
 
 def apply_filters(df):
-    # Bish
+    """
+    Filter for rows with Aquarium column set to 'commercial' or 'highly commercial'.
+    """
+    allowed_values = ['commercial', 'highly commercial']
+    filtered_df = df[df['Aquarium'].isin(allowed_values)]
+    return filtered_df
